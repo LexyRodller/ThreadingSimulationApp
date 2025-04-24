@@ -1,0 +1,161 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ThreadingSimulationApp.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="using:ThreadingSimulationApp.Converters"
+        mc:Ignorable="d"
+        Width="800"
+        Height="600"
+        x:Class="ThreadingSimulationApp.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Trading Point Simulation App"
+        Background="#FFE6F2FF">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Window.Resources>
+        <conv:BoolToBrushConverter x:Key="BoolToBrushConverter"/>
+        <conv:ObjectIsNotNullConverter x:Key="ObjectIsNotNullConverter"/>
+    </Window.Resources>
+    
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#FF007ACC"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF005A9E"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        
+        <Style Selector="Button:pointerover">
+            <Setter Property="Background" Value="#FF1C86D1"/>
+            <Setter Property="BorderBrush" Value="#FF007ACC"/>
+        </Style>
+        
+        <Style Selector="Button:pressed">
+            <Setter Property="Background" Value="#FF005A9E"/>
+        </Style>
+        
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="#FFD1E6FF"/>
+            <Setter Property="Foreground" Value="#FF003366"/>
+            <Setter Property="BorderBrush" Value="#FF99C2FF"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        </Style>
+        
+        <Style Selector="Border">
+            <Setter Property="Background" Value="#FFD1E6FF"/>
+            <Setter Property="BorderBrush" Value="#FF99C2FF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+        </Style>
+        
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#FF003366"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+        </Style>
+        
+        <Style Selector="TextBlock[FontWeight=Bold]">
+            <Setter Property="Foreground" Value="#FF004080"/>
+        </Style>
+    </Window.Styles>
+
+    <DockPanel>
+        <!-- Панель управления -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5" Spacing="10" Background="#FFB3D9FF">
+            <Button Content="Add Trading Point" Command="{Binding AddTradingPointCommand}" Width="150"/>
+            <Button Content="Remove Selected" Command="{Binding RemoveTradingPointCommand}" Width="150"
+                    IsEnabled="{Binding SelectedTradingPoint, Converter={StaticResource ObjectIsNotNullConverter}}"/>
+        </StackPanel>
+
+        <!-- Основное содержимое -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Список торговых точек -->
+            <ListBox Grid.Column="0" ItemsSource="{Binding TradingPoints}" SelectedItem="{Binding SelectedTradingPoint}"
+                     Margin="5" Background="#FFD1E6FF">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="5">
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text="{Binding Status}" 
+                                     Foreground="{Binding Status, Converter={StaticResource BoolToBrushConverter}, 
+                                     ConverterParameter='Trading:#FF009933;Out of stock 1 product:#FFFF9900;Default:#FF003366'}"/>
+                            <TextBlock Text="{Binding TotalProductsCount, StringFormat='Products: {0}'}"/>
+                            <TextBlock Text="{Binding Customers.Count, StringFormat='Customers: {0}'}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Детали выбранной торговой точки -->
+            <Grid Grid.Column="1" Margin="5" 
+                  IsVisible="{Binding SelectedTradingPoint, Converter={StaticResource ObjectIsNotNullConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Информация о торговой точке -->
+                <Border Grid.Row="0" 
+                        Background="{Binding SelectedTradingPoint.Status, Converter={StaticResource BoolToBrushConverter}, 
+                        ConverterParameter='Stopped:#FFE6CCCC;Trading:#FFD1E6FF;Out of stock:#FFFFE6B3'}"
+                        CornerRadius="5" Margin="0,0,0,5" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="{Binding SelectedTradingPoint.Name}" FontSize="18" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding SelectedTradingPoint.Status}"/>
+                        <TextBlock Text="{Binding SelectedTradingPoint.LastEvent}" FontStyle="Italic"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Список товаров -->
+                <Border Grid.Row="1" Margin="0,0,0,5" BorderBrush="#FF99C2FF" BorderThickness="1" CornerRadius="5">
+                    <StackPanel>
+                        <TextBlock Text="Available Products" FontWeight="Bold" Margin="5"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ListBox ItemsSource="{Binding SelectedTradingPoint.Products}" Height="200">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Price, StringFormat='Price: {0:C}'}"/>
+                                            <TextBlock Text="{Binding Quantity, StringFormat='Qty: {0}'}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Журнал событий -->
+                <Border Grid.Row="2" BorderBrush="#FF99C2FF" BorderThickness="1" CornerRadius="5">
+                    <StackPanel>
+                        <TextBlock Text="Event Log" FontWeight="Bold" Margin="5"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ListBox ItemsSource="{Binding SelectedTradingPoint.EventLog}" Height="200">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>
